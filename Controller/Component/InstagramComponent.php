@@ -25,6 +25,12 @@ class InstagramComponent extends Component {
 	public $meta;
 
 	/**
+	 * Pagination data of the last request, for information purposes
+	 * @var array
+	 */
+	public $pagination;
+
+	/**
 	 * Cake component initialize
 	 * @param  Controller $controller 
 	 */
@@ -138,6 +144,8 @@ class InstagramComponent extends Component {
 	 */
 	private function process($raw) {
 		$result = false;
+		$this->meta = array();
+		$this->pagination = array();
 		$data = @json_decode($raw, true);
 		if(is_array($data)) {
 			if(isset($data['data'], $data['meta']['code']) && $data['meta']['code'] == 200) {
@@ -147,6 +155,9 @@ class InstagramComponent extends Component {
 			}
 			if(isset($data['meta'])) {
 				$this->meta = $data['meta'];
+			}
+			if(isset($data['pagination'])) {
+				$this->pagination = $data['pagination'];
 			}
 		}
 		return $result;
