@@ -19,16 +19,34 @@ class InstagramComponent extends Component {
 	public $apiBase = 'https://api.instagram.com/v1';
 
 	/**
+	 * History data, for information purposes
+	 * @var array
+	 */
+	public $history;
+
+	/**
 	 * Meta data of the last request, for information purposes
 	 * @var array
 	 */
 	public $meta;
 
 	/**
+	 * Data of the last request
+	 * @var array
+	 */
+	public $data;
+
+	/**
 	 * Pagination data of the last request, for information purposes
 	 * @var array
 	 */
 	public $pagination;
+
+	/**
+	 * Url to next result
+	 * @var array
+	 */
+	public $next_url;
 
 	/**
 	 * Cake component initialize
@@ -112,7 +130,9 @@ class InstagramComponent extends Component {
 	 */
 	public function get($url, $data = array()) {
 		$http = new HttpSocket();
-		return $this->process($http->get($this->apiBase.$url, $this->_params($data)));
+		$url_target = $this->apiBase.$url;
+		$this->history[] = $url_target;
+		return $this->process($http->get($url_target, $this->_params($data)));
 	}
 
 	/**
@@ -123,7 +143,25 @@ class InstagramComponent extends Component {
 	 */
 	public function post($url, $data = array()) {
 		$http = new HttpSocket();
-		return $this->process($http->post($this->apiBase.$url, $this->_params($data)));
+		$url_target = $this->apiBase.$url;
+		$this->history[] = $url_target;
+		return $this->process($http->post($url_target, $this->_params($data)));
+	}
+
+	/**
+	 * Make a get request to the api
+	 * @param  string $url  relative to the base
+	 * @param  array $data 
+	 * @return array
+	 */
+	public function next($data = array()) {
+		if (empty($this->next_url))	{
+			return false;
+		}
+		$http = new HttpSocket();
+		$url_target = $this->apiBase.$this->next_url;
+		$this->history[] = $url_target;
+		return $this->process($http->get($url_target, $this->_params($data)));
 	}
 
 	/**
@@ -134,7 +172,9 @@ class InstagramComponent extends Component {
 	 */
 	public function delete($url, $data = array()) {
 		$http = new HttpSocket();
-		return $this->process($http->delete($this->apiBase.$url.'?'.http_build_query($this->_params($data))));
+		$url_target = $this->apiBase.$url.'?'.http_build_query($this->_params($data));
+		$this->history[] = $url_target;
+		return $this->process($http->delete($url_target));
 	}
 
 	/**
@@ -144,20 +184,28 @@ class InstagramComponent extends Component {
 	 */
 	private function process($raw) {
 		$result = false;
+		$this->data = array();
 		$this->meta = array();
 		$this->pagination = array();
+		$this->next_url = '';
 		$data = @json_decode($raw, true);
 		if(is_array($data)) {
 			if(isset($data['data'], $data['meta']['code']) && $data['meta']['code'] == 200) {
-				$result = $data['data'];
+				$result = true;
 			} elseif(isset($data['meta']['code']) && $data['meta']['code'] == 200) {
 				$result = true;
+			}
+			if(isset($data['data'])) {
+				$this->data = $data['data'];
 			}
 			if(isset($data['meta'])) {
 				$this->meta = $data['meta'];
 			}
 			if(isset($data['pagination'])) {
 				$this->pagination = $data['pagination'];
+				if(isset($data['pagination']['next_url'])) {
+					$this->next_url = str_replace($this->apiBase, '', $data['pagination']['next_url']);
+				}
 			}
 		}
 		return $result;
