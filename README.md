@@ -19,7 +19,12 @@ Configure::write('Instagram.callback_url', 'CALLBACK_URL');
 
 ## Example use ##
 
-Recent media of the tag 'spring': ```$this->Instagram->get('/tags/spring/media/recent');```
+Recent media of the tag 'spring':
+```
+if ($this->Instagram->get('/tags/spring/media/recent') !== false) {
+	print_r($this->Instagram->data);
+}
+```
 
 Subscriptions to the realtime api: ```$this->Instagram->subscriptions();```
 
